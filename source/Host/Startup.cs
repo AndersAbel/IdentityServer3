@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+using Kentor.AuthServices;
+using Kentor.AuthServices.Configuration;
+using Kentor.AuthServices.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security.Facebook;
 using Microsoft.Owin.Security.Google;
@@ -21,6 +24,7 @@ using Microsoft.Owin.Security.OpenIdConnect;
 using Microsoft.Owin.Security.Twitter;
 using Microsoft.Owin.Security.WsFederation;
 using Owin;
+using System.IdentityModel.Metadata;
 using Thinktecture.IdentityServer.Core.Configuration;
 using Thinktecture.IdentityServer.Core.Logging;
 using Thinktecture.IdentityServer.Core.Services;
@@ -150,6 +154,27 @@ namespace Thinktecture.IdentityServer.Host
             };
 
             app.UseOpenIdConnectAuthentication(aad);
+
+            var authServicesOptions = new KentorAuthServicesAuthenticationOptions(false)
+            {
+                SPOptions = new SPOptions
+                {
+                    EntityId = new EntityId("http://sp.example.com")
+                },
+
+                SignInAsAuthenticationType = signInAsType,
+                AuthenticationType = "saml2p",
+                Caption = "SAML2p",
+            };
+
+            authServicesOptions.IdentityProviders.Add(new IdentityProvider(
+                new EntityId("http://stubidp.kentor.se/Metadata"),
+                authServicesOptions.SPOptions)
+            {
+                LoadMetadata = true,
+            });
+
+            app.UseKentorAuthServicesAuthentication(authServicesOptions);
         }
     }
 }
